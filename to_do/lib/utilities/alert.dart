@@ -36,15 +36,13 @@ class DialogBox extends StatelessWidget {
           TextField(
             controller: descriptionController,
             textAlign: TextAlign.center,
-            maxLines: null, // Allows for multiline input
+            maxLines: null, // Description input
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               hintText: 'Enter Description',
               hintStyle: TextStyle(color: Colors.grey[300]),
               contentPadding: EdgeInsets.symmetric(
-                vertical: 50.0, // Vertical padding for top and bottom space
-                horizontal: 50.0, // Horizontal padding for left and right space
-              ),
+                  vertical: 50.0, horizontal: 50.0), // Adjust vertical padding
             ),
           ),
 
