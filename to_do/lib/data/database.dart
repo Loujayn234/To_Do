@@ -1,15 +1,12 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
 class ToDoDataBase {
-  List toDoList = [
-    ['Task name', 'description', false, 'data&time']
-  ];
+  List toDoList = [];
   final _myBox = Hive.box('mybox');
 
   ToDoDataBase(); // Correctly instantiate without parameters
 
   void createInitialData() {
-    // Correct method name
     toDoList = [];
     updateDataBase(); // Save initial data to Hive
   }

@@ -20,8 +20,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     if (_myBox.get("TODOLIST") == null) {
-      db.createInitialData(); // Fixed method name
-      db.updateDataBase(); // Save initial data to Hive
+      db.updateDataBase();
     } else {
       db.loadData();
     }
@@ -198,7 +197,7 @@ class _HomePageState extends State<HomePage> {
               child: db.toDoList.isEmpty
                   ? const Center(
                       child: Text(
-                        'You Have No Tasks Yet',
+                        'Add Tasks To Start To-Doing',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
