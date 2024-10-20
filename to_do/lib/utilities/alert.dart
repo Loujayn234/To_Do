@@ -6,12 +6,14 @@ import 'package:to_do/utilities/cancelbutton.dart';
 
 class DialogBox extends StatelessWidget {
   final TextEditingController controller;
+  final TextEditingController descriptionController;
   final VoidCallback onSave;
   final VoidCallback onCancel;
 
   DialogBox(
       {super.key,
       required this.controller,
+      required this.descriptionController,
       required this.onSave,
       required this.onCancel});
 
@@ -20,7 +22,7 @@ class DialogBox extends StatelessWidget {
     return AlertDialog(
       backgroundColor: Colors.white,
       content: SizedBox(
-        height: 150,
+        height: 300,
         //enter task
         child:
             Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
@@ -31,6 +33,18 @@ class DialogBox extends StatelessWidget {
                 hintText: "Add New Task!",
                 hintStyle: TextStyle(color: Colors.grey[300])),
           ),
+          TextField(
+            controller: descriptionController,
+            textAlign: TextAlign.center, // Description input
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'Enter Description',
+              hintStyle: TextStyle(color: Colors.grey[300]),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 50), // Adjust vertical padding
+            ),
+          ),
+
           //buttons --> save & -->cancel
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,

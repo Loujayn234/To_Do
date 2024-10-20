@@ -1,7 +1,7 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:to_do/data/database.dart';
 import 'package:to_do/utilities/alert.dart';
 import '../utilities/todo_tile.dart';
 
@@ -13,25 +13,97 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  //hive box
-  final box = Hive.box('mybox');
+  final _myBox = Hive.box('mybox');
+  ToDoDataBase db = ToDoDataBase();
 
-  //text controller
-  final _controller = TextEditingController();
-
-  //todo list
-  List toDoList = [];
-  //chechbox method
-  void checkBoxChanged(bool? value, int index) {
-    setState(() {
-      toDoList[index][1] = !toDoList[index][1];
-    });
+  @override
+  void initState() {
+    super.initState();
+    if (_myBox.get("TODOLIST") == null) {
+      db.createInitialData(); // Fixed method name
+      db.updateDataBase(); // Save initial data to Hive
+    } else {
+      db.loadData();
+    }
   }
 
-  //save new task method
-  // Save new task method
+  final _controller = TextEditingController();
+  final _descriptionController = TextEditingController();
+//checkbox
+  void checkBoxChanged(bool? value, int index) {
+    setState(() {
+      db.toDoList[index][2] =
+          !db.toDoList[index][2]; // Use correct index for isCompleted
+    });
+    db.updateDataBase();
+  }
+
+  //creating new task
+  void createNewTask() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return DialogBox(
+          controller: _controller,
+          descriptionController: _descriptionController,
+          onSave: saveNewTask,
+          onCancel: onCancel,
+        );
+      },
+    );
+  }
+
+  //saving new task
   void saveNewTask() {
-    // Check if the text is not empty
+    if (_controller.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Task cannot be empty'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
+    String currentDate =
+        DateFormat('yyyy-MM-dd – kk:mm').format(DateTime.now());
+
+    setState(() {
+      db.toDoList.add(
+          [_controller.text, _descriptionController.text, false, currentDate]);
+      _controller.clear();
+      _descriptionController.clear();
+    });
+
+    db.updateDataBase(); // Move this outside of the setState
+    Navigator.of(context).pop();
+  }
+
+  void onCancel() {
+    Navigator.of(context).pop();
+  }
+
+  // task editing
+  void editTask(int index) {
+    _controller.text = db.toDoList[index][0]; // Set current task name
+    _descriptionController.text =
+        db.toDoList[index][1]; // Set current description
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return DialogBox(
+          controller: _controller,
+          descriptionController: _descriptionController,
+          onSave: () => saveEditedTask(index), // Save the edited task
+          onCancel: onCancel,
+        );
+      },
+    );
+  }
+
+  // save editing
+  void saveEditedTask(int index) {
     if (_controller.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -43,79 +115,126 @@ class _HomePageState extends State<HomePage> {
     }
 
     setState(() {
-      toDoList.add([_controller.text, false]);
-      _controller.clear();
+      db.toDoList[index][0] = _controller.text; // Update task name
+      db.toDoList[index][1] = _descriptionController.text; // Update description
     });
-    Navigator.of(context).pop();
+
+    db.updateDataBase(); // Update the database
+    _controller.clear(); // Clear the task name controller
+    _descriptionController.clear(); // Clear the description controller
+    Navigator.of(context).pop(); // Close the dialog
   }
 
-  //cancel method
-  void onCancel() {
-    Navigator.of(context).pop();
-  }
-
-  //create new task method
-  void createNewTask() {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return DialogBox(
-            controller: _controller,
-            onSave: saveNewTask,
-            onCancel: onCancel,
-          );
-        });
-  }
-
-  //delete task method
+//deleting task
   void deleteTask(int index) {
-    setState(() {
-      toDoList.removeAt(index);
-    });
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: const Text('Are you sure you want to delete this task?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  db.toDoList.removeAt(index);
+                  db.updateDataBase(); // Update database after deletion
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Yes'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Just close the dialog
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 213, 202, 234),
-      appBar: AppBar(
-        title: const Text(
-          'To Do',
-          style: TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(154, 255, 255, 255),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromARGB(255, 104, 98, 157),
+              Color.fromARGB(255, 227, 226, 245),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
-        centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 117, 104, 161),
+        child: Column(
+          children: [
+            PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+                child: AppBar(
+                  title: const Text(
+                    'To Do',
+                    style: TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(221, 255, 255, 255),
+                    ),
+                  ),
+                  centerTitle: true,
+                  backgroundColor: Color.fromARGB(255, 90, 87, 148),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            Expanded(
+              child: db.toDoList.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'You Have No Tasks Yet',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(137, 78, 77, 77),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: db.toDoList.length,
+                      itemBuilder: (context, index) {
+                        print(db.toDoList[
+                            index]); // Check the contents of the current index
+                        // Ensure the current task has at least 4 elements
+                        if (db.toDoList[index].length < 4) {
+                          return const SizedBox
+                              .shrink(); // Handle invalid task structure
+                        }
+                        return TodoTile(
+                          taskName: db.toDoList[index][0],
+                          taskDescription: db.toDoList[index][1],
+                          isCompleted: db.toDoList[index][2],
+                          taskDate: db.toDoList[index][3],
+                          onChange: (value) => checkBoxChanged(value, index),
+                          deletFunction: (context) => deleteTask(index),
+                          editFunction: (context) => editTask(index),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: createNewTask,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
-      body: toDoList.isEmpty
-          ? Center(
-              child: Text(
-                'You Have No Tasks Yet',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(137, 78, 77, 77),
-                ),
-              ),
-            )
-          : ListView.builder(
-              itemCount: toDoList.length,
-              itemBuilder: (context, index) {
-                return TodoTile(
-                  taskName: toDoList[index][0],
-                  isCompleted: toDoList[index][1],
-                  onChange: (value) => checkBoxChanged(value, index),
-                  deletFunction: (context) => deleteTask(index),
-                );
-              },
-            ),
     );
   }
 }
