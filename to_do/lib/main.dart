@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:to_do/screens/home.dart';
+import 'package:to_do/screens/splash.dart';
 
 void main() async {
   // Ensure Flutter is initialized
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HomePage(),
+      home: SplashScreen(),
       theme: ThemeData(primarySwatch: Colors.deepPurple),
     );
   }
